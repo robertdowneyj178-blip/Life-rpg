@@ -1,0 +1,1487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Life RPG</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"> 
+<link rel="stylesheet" href="style.css">
+
+<style>
+  :root{
+    --bg:#14162B;
+    --surface:#1F2242;
+    --surface-2:#262A52;
+    --line:#3A3F72;
+    --gold:#D9A441;
+    --gold-dim:#8F723A;
+    --text:#EDEAE0;
+    --text-dim:#9599C2;
+    --green:#6FCF97;
+    --red:#E2725B;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'JetBrains Mono', monospace;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.display{
+    font-family:'Cinzel', serif;
+    letter-spacing:0.02em;
+    margin:0;
+  }
+  .app{
+    max-width:480px;
+    margin:0 auto;
+    padding:20px 16px 100px;
+  }
+  .char-header{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding-bottom:16px;
+    border-bottom:1px solid var(--line);
+    margin-bottom:14px;
+  }
+  .level-badge{
+    width:56px;height:56px;
+    flex-shrink:0;
+    border:2px solid var(--gold);
+    display:flex;align-items:center;justify-content:center;
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    font-size:18px;font-weight:600;color:var(--gold);
+    background:var(--surface);
+  }
+  .char-info{flex:1;min-width:0;}
+  .char-info h1{font-size:19px;color:var(--text);}
+  .char-info .char-title{font-size:11px;color:var(--gold);margin-top:2px;}
+  .char-info .xp-line{font-size:12px;color:var(--text-dim);margin-top:4px;}
+  .coin-pill{
+    display:flex;align-items:center;gap:5px;flex-shrink:0;
+    background:var(--surface);border:1px solid var(--gold-dim);
+    padding:6px 10px;font-size:12px;color:var(--gold);font-weight:600;
+  }
+  .coin-pill.flash{animation:statPulse .7s ease;}
+  .bar-track{
+    height:6px;background:var(--surface-2);border:1px solid var(--line);
+    margin-top:6px;overflow:hidden;
+  }
+  .bar-fill{height:100%;background:var(--gold);transition:width .3s;}
+  .bar-fill.green{background:var(--green);}
+  .section{margin-bottom:26px;}
+  .section-title{
+    font-size:14px;color:var(--gold);text-transform:none;
+    margin-bottom:10px;
+    display:flex;justify-content:space-between;align-items:baseline;
+  }
+  .section-sub{font-size:10px;color:var(--text-dim);font-weight:normal;}
+  .day-banner{
+    display:flex;justify-content:space-between;align-items:center;
+    background:var(--surface);border:1px solid var(--gold-dim);
+    padding:10px 12px;margin-bottom:16px;
+    cursor:pointer;
+  }
+  .day-banner:active{transform:scale(0.99);}
+  .day-banner-left .day-num{font-size:13px;color:var(--gold);}
+  .day-banner-left .today-xp{font-size:11px;color:var(--text-dim);margin-top:2px;}
+  .day-banner-right{font-size:11px;color:var(--text-dim);text-align:right;}
+
+  .mini-stats-row{display:flex;gap:8px;margin-bottom:20px;}
+  .mini-stat{
+    flex:1;background:var(--surface);border:1px solid var(--line);
+    padding:10px;text-align:center;
+  }
+  .mini-stat .val{font-size:16px;color:var(--gold);font-family:'Cinzel',serif;}
+  .mini-stat .lbl{font-size:9px;color:var(--text-dim);margin-top:2px;text-transform:uppercase;letter-spacing:0.05em;}
+
+  .daily-progress-wrap{margin-bottom:20px;}
+  .daily-progress-label{
+    display:flex;justify-content:space-between;font-size:11px;color:var(--text-dim);margin-bottom:6px;
+  }
+
+  .stat-row{
+    display:flex;align-items:center;gap:10px;
+    padding:9px 0;border-bottom:1px solid var(--line);
+    transition:box-shadow .2s;
+  }
+  .stat-row:last-child{border-bottom:none;}
+  .stat-row.just-changed{animation:statPulse .7s ease;}
+  .stat-name{width:88px;font-size:12px;color:var(--text);flex-shrink:0;}
+  .stat-row .bar-track{flex:1;margin:0;}
+  .stat-lvl{width:34px;text-align:right;font-size:12px;color:var(--text-dim);}
+  .task{
+    display:flex;align-items:flex-start;gap:10px;
+    padding:10px 0;border-bottom:1px solid var(--line);
+  }
+  .task:last-child{border-bottom:none;}
+  .task.just-completed{animation:rowFlash 1s ease;}
+  .task input[type=checkbox]{
+    width:20px;height:20px;flex-shrink:0;margin-top:2px;
+    accent-color:var(--gold);
+  }
+  .task-body{flex:1;}
+  .task-name{font-size:13px;}
+  .task-meta{font-size:11px;color:var(--text-dim);margin-top:2px;}
+  .task-name.done{color:var(--green);text-decoration:line-through;}
+  .diff-tag{font-weight:600;}
+  .diff-easy{color:var(--green);}
+  .diff-medium{color:var(--gold);}
+  .diff-hard{color:var(--red);}
+  .task-del{
+    background:none;border:none;color:var(--text-dim);
+    font-size:16px;cursor:pointer;padding:0 4px;
+  }
+  .quest{
+    border:1px solid var(--gold-dim);
+    background:var(--surface);
+    padding:12px;margin-bottom:10px;
+  }
+  .quest-name{font-size:13px;color:var(--gold);margin-bottom:4px;}
+  .quest-reward{font-size:11px;color:var(--text-dim);margin-bottom:8px;}
+  .quest button{width:100%;}
+  button{
+    font-family:'JetBrains Mono', monospace;
+    background:var(--surface-2);
+    color:var(--text);
+    border:1px solid var(--line);
+    padding:9px 12px;font-size:12px;
+    cursor:pointer;
+  }
+  button.primary{
+    background:var(--gold);color:#14162B;border-color:var(--gold);font-weight:600;
+  }
+  button.danger{
+    background:var(--red);color:#14162B;border-color:var(--red);font-weight:600;
+  }
+  button:disabled{opacity:0.4;cursor:not-allowed;}
+  button:active{transform:scale(0.98);}
+  .add-task-btn{width:100%;margin-top:8px;}
+  .new-day-btn{width:100%;margin-top:10px;}
+  input[type=text], input[type=number], select{
+    width:100%;background:var(--surface-2);border:1px solid var(--line);
+    color:var(--text);padding:8px;font-family:'JetBrains Mono',monospace;
+    font-size:13px;margin-top:4px;
+  }
+  label{font-size:11px;color:var(--text-dim);display:block;margin-top:10px;}
+  .form-actions{display:flex;gap:8px;margin-top:16px;}
+  .form-actions button{flex:1;}
+  .modal-backdrop{
+    display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);
+    align-items:flex-end;justify-content:center;z-index:10;
+    overflow-y:auto;
+  }
+  .modal-backdrop.open{display:flex;}
+  .modal{
+    background:var(--surface);border-top:1px solid var(--line);
+    width:100%;max-width:480px;padding:20px 16px 28px;
+    max-height:88vh;overflow-y:auto;
+  }
+  .radio-row{display:flex;gap:14px;margin-top:6px;flex-wrap:wrap;}
+  .radio-row label{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text);margin:0;}
+  .stat-check-list{
+    display:flex;flex-direction:column;gap:6px;margin-top:6px;
+    background:var(--surface-2);border:1px solid var(--line);padding:8px;
+  }
+  .stat-check-list label{
+    display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text);margin:0;
+  }
+  .hidden{display:none !important;}
+  .toast{
+    position:fixed;bottom:16px;left:50%;transform:translateX(-50%);
+    background:var(--gold);color:#14162B;padding:8px 16px;font-size:12px;
+    font-weight:600;opacity:0;transition:opacity .25s;pointer-events:none;
+    max-width:90%;text-align:center;z-index:40;
+  }
+  .toast.show{opacity:1;}
+  .fat-track{position:relative;margin-top:14px;}
+  .fat-track .bar-track{height:10px;}
+  .fat-ticks{
+    display:flex;justify-content:space-between;
+    font-size:10px;color:var(--text-dim);margin-top:4px;
+  }
+  .fat-label{font-size:12px;color:var(--text-dim);margin-bottom:2px;}
+
+  .day-card{
+    border:1px solid var(--line);background:var(--surface-2);
+    padding:12px;margin-bottom:12px;
+  }
+  .day-card-head{
+    display:flex;justify-content:space-between;align-items:baseline;
+    margin-bottom:6px;
+  }
+  .day-card-head .day-title{font-size:13px;color:var(--gold);}
+  .day-card-head .day-tag{font-size:10px;color:var(--text-dim);}
+  .xp-summary-row{
+    display:flex;justify-content:space-between;font-size:11px;flex-wrap:wrap;gap:4px;
+    margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--line);
+  }
+  .xp-summary-row .gain{color:var(--green);}
+  .xp-summary-row .loss{color:var(--red);}
+  .xp-summary-row .coin{color:var(--gold);}
+  .stat-breakdown{
+    display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;
+    margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--line);
+  }
+  .stat-breakdown-item{font-size:11px;color:var(--text-dim);display:flex;justify-content:space-between;}
+  .stat-breakdown-item .g{color:var(--green);}
+  .stat-breakdown-item .l{color:var(--red);}
+  .day-task-line{
+    font-size:11px;padding:3px 0;display:flex;justify-content:space-between;gap:8px;
+  }
+  .day-task-line .name{color:var(--text);flex:1;}
+  .day-task-line.missed .name{color:var(--red);}
+  .day-task-line.completed .name{color:var(--green);}
+  .search-wrap{margin-bottom:14px;}
+  .no-results{font-size:12px;color:var(--text-dim);padding:10px 0;}
+
+  .shop-item{
+    border:1px solid var(--line);background:var(--surface);
+    padding:12px;margin-bottom:10px;
+  }
+  .shop-item-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;}
+  .shop-item-name{font-size:13px;color:var(--gold);}
+  .shop-item-cost{font-size:12px;color:var(--text-dim);}
+  .shop-item-desc{font-size:11px;color:var(--text-dim);margin-bottom:8px;}
+  .shop-item button{width:100%;}
+  .locked-note{font-size:10px;color:var(--text-dim);text-align:center;padding:6px 0;}
+
+  .ach-item{
+    display:flex;gap:10px;align-items:flex-start;
+    border:1px solid var(--line);background:var(--surface);
+    padding:10px;margin-bottom:8px;
+  }
+  .ach-item.unlocked{border-color:var(--gold-dim);}
+  .ach-icon{font-size:18px;flex-shrink:0;width:24px;text-align:center;}
+  .ach-item.locked .ach-icon,.ach-item.locked .ach-name{opacity:0.4;}
+  .ach-name{font-size:12px;color:var(--text);}
+  .ach-desc{font-size:10px;color:var(--text-dim);margin-top:2px;}
+  .ach-reward{font-size:10px;color:var(--gold);margin-top:2px;}
+
+  .activity-item{
+    font-size:11px;color:var(--text-dim);padding:6px 0;
+    border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:8px;
+  }
+  .activity-item:last-child{border-bottom:none;}
+  .activity-item .a-day{color:var(--gold-dim);flex-shrink:0;}
+
+  .streak-box{
+    display:flex;align-items:center;gap:14px;
+    background:var(--surface);border:1px solid var(--line);padding:12px;margin-bottom:20px;
+  }
+  .streak-flame{font-size:26px;}
+  .streak-nums{flex:1;}
+  .streak-nums .cur{font-size:15px;color:var(--gold);font-family:'Cinzel',serif;}
+  .streak-nums .sub{font-size:10px;color:var(--text-dim);margin-top:2px;}
+  .shield-count{font-size:11px;color:var(--text-dim);text-align:right;}
+
+  .weekly-box{
+    background:var(--surface);border:1px solid var(--line);padding:12px;margin-bottom:20px;
+  }
+  .weekly-head{display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;color:var(--text);}
+  .weekly-sub{font-size:10px;color:var(--text-dim);margin-top:6px;}
+
+  .boost-banner{
+    background:linear-gradient(90deg,var(--gold-dim),var(--gold));
+    color:#14162B;font-size:11px;font-weight:600;padding:8px 10px;
+    margin-bottom:14px;text-align:center;
+  }
+
+  @keyframes statPulse{
+    0%{ box-shadow: 0 0 0 0 rgba(217,164,65,0.6); }
+    100%{ box-shadow: 0 0 0 8px rgba(217,164,65,0); }
+  }
+  @keyframes rowFlash{
+    0%{ background:rgba(111,207,151,0.35); }
+    100%{ background:transparent; }
+  }
+  @keyframes popFade{
+    0%{ opacity:0; transform:translate(-50%,10px) scale(0.9); }
+    15%{ opacity:1; transform:translate(-50%,0) scale(1.05); }
+    30%{ transform:translate(-50%,0) scale(1); }
+    80%{ opacity:1; }
+    100%{ opacity:0; transform:translate(-50%,-30px) scale(1); }
+  }
+  .feedback-pop{
+    position:fixed;top:16%;left:50%;
+    padding:9px 16px;border:1px solid var(--gold);
+    background:var(--surface);color:var(--green);font-weight:600;font-size:13px;
+    z-index:50;animation:popFade 1.4s ease forwards;pointer-events:none;
+    white-space:nowrap;
+  }
+  .feedback-pop.loss{color:var(--red);border-color:var(--red);}
+  .feedback-pop.special{color:var(--gold);border-color:var(--gold);background:#2a2450;font-size:14px;}
+
+  @keyframes levelBannerIn{
+    0%{opacity:0;transform:translate(-50%,-50%) scale(0.8);}
+    18%{opacity:1;transform:translate(-50%,-50%) scale(1.06);}
+    28%{transform:translate(-50%,-50%) scale(1);}
+    85%{opacity:1;}
+    100%{opacity:0;transform:translate(-50%,-50%) scale(1);}
+  }
+  .level-banner{
+    position:fixed;top:50%;left:50%;
+    background:linear-gradient(135deg,var(--gold),var(--gold-dim));
+    color:#14162B;padding:20px 32px;font-family:'Cinzel',serif;font-size:19px;
+    font-weight:700;text-align:center;z-index:60;border:2px solid rgba(255,255,255,0.25);
+    animation:levelBannerIn 2.1s ease forwards;pointer-events:none;
+    box-shadow:0 0 40px rgba(217,164,65,0.5);
+  }
+  .level-banner .sub{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;margin-top:6px;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="char-header">
+    <div class="level-badge" id="charLevelBadge">1</div>
+    <div class="char-info">
+      <h1 id="charNameHeading">Arjun</h1>
+      <div class="char-title" id="charTitleLine"></div>
+      <div class="xp-line" id="charXpLine">0 / 100 XP to next level</div>
+      <div class="bar-track"><div class="bar-fill" id="charXpBar" style="width:0%"></div></div>
+    </div>
+    <div class="coin-pill" id="coinPill">🪙 0</div>
+  </div>
+
+  <div id="boostBanner" class="boost-banner hidden">⚡ Boost ready — next completed quest gets +50% XP</div>
+
+  <div class="day-banner" onclick="openHistoryModal()">
+    <div class="day-banner-left">
+      <div class="day-num">Day <span id="dayNumber">1</span></div>
+      <div class="today-xp" id="todayXpSummary">Today: +0 XP</div>
+    </div>
+    <div class="day-banner-right">
+      <div id="dueCountLabel">0 quests remaining</div>
+      <div>Tap for history &rarr;</div>
+    </div>
+  </div>
+
+  <div class="daily-progress-wrap">
+    <div class="daily-progress-label">
+      <span>Daily progress</span>
+      <span id="dailyProgressText">0/0</span>
+    </div>
+    <div class="bar-track"><div class="bar-fill green" id="dailyProgressBar" style="width:0%"></div></div>
+  </div>
+
+  <div class="streak-box">
+    <div class="streak-flame">🔥</div>
+    <div class="streak-nums">
+      <div class="cur" id="streakCurrent">0-day streak</div>
+      <div class="sub" id="streakLongest">Best: 0</div>
+    </div>
+    <div class="shield-count" id="shieldCount">🛡 0 shields</div>
+  </div>
+
+  <div class="weekly-box">
+    <div class="weekly-head">
+      <span>Weekly challenge</span>
+      <span id="weeklyProgressText">0/5 perfect days</span>
+    </div>
+    <div class="bar-track"><div class="bar-fill" id="weeklyProgressBar" style="width:0%"></div></div>
+    <div class="weekly-sub" id="weeklySub">Day 1 of 7 this week &middot; reward: +100 coins, +50 XP</div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Attributes</div>
+    <div id="statsList"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Fat loss tracker</div>
+    <div class="fat-label" id="fatLabel">0.0 / 10 kg lost</div>
+    <div class="fat-track">
+      <div class="bar-track"><div class="bar-fill" id="fatBar" style="width:0%"></div></div>
+      <div class="fat-ticks"><span>0</span><span>2</span><span>4</span><span>6</span><span>8</span><span>10kg</span></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Today's quests</div>
+    <div id="taskList"></div>
+    <button class="add-task-btn" onclick="openTaskModal()">+ Add task</button>
+    <button class="new-day-btn danger" onclick="confirmStartNewDay()">Start new day &rarr;</button>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Side quests</div>
+    <div id="sideQuestList"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Shop <span class="section-sub" id="shopCoinsSub"></span></div>
+    <div id="shopList"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Achievements <span class="section-sub" id="achProgressSub"></span></div>
+    <div id="achList"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Recent activity</div>
+    <div id="activityList"></div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-backdrop" id="taskModal">
+  <div class="modal">
+    <h2 style="font-size:16px;margin-bottom:4px;">New quest</h2>
+    <label>Name</label>
+    <input type="text" id="newTaskName" placeholder="e.g. Read 10 pages" />
+
+    <label>Stats this feeds (pick one or more)</label>
+    <div class="stat-check-list" id="statCheckList"></div>
+
+    <label>New stat name (optional, adds & selects it)</label>
+    <input type="text" id="newStatName" placeholder="Leave blank if not needed" />
+
+    <label>Difficulty</label>
+    <div class="radio-row">
+      <label><input type="radio" name="taskDifficulty" value="easy"> Easy</label>
+      <label><input type="radio" name="taskDifficulty" value="medium" checked> Medium</label>
+      <label><input type="radio" name="taskDifficulty" value="hard"> Hard</label>
+    </div>
+
+    <label>Repeats every (days) &mdash; 1 = every day</label>
+    <input type="number" id="newTaskFrequency" value="1" min="1" />
+
+    <label>Type</label>
+    <div class="radio-row">
+      <label><input type="radio" name="taskType" value="simple" checked onchange="toggleProgressiveFields()"> Simple</label>
+      <label><input type="radio" name="taskType" value="progressive" onchange="toggleProgressiveFields()"> Progressive</label>
+    </div>
+    <div id="progressiveFields" class="hidden">
+      <label>Starting target (e.g. reps, minutes)</label>
+      <input type="number" id="newTaskTarget" value="10" min="1" />
+      <label>Grows by</label>
+      <input type="number" id="newTaskGrowth" value="2" min="1" />
+      <label>Every how many successful days (difficulty growth)</label>
+      <input type="number" id="newTaskInterval" value="7" min="1" />
+    </div>
+
+    <label style="margin-top:14px;">
+      <input type="checkbox" id="newTaskIsDeficit" style="width:auto;display:inline-block;margin-right:6px;" />
+      This task represents hitting a ~500 kcal deficit (feeds the fat loss tracker)
+    </label>
+
+    <div class="form-actions">
+      <button onclick="closeTaskModal()">Cancel</button>
+      <button class="primary" onclick="saveNewTask()">Add quest</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="newDayModal">
+  <div class="modal">
+    <h2 style="font-size:16px;margin-bottom:8px;">Start new day?</h2>
+    <div class="task-meta" id="newDaySummary" style="margin-bottom:14px;"></div>
+    <div class="form-actions">
+      <button onclick="closeNewDayModal()">Cancel</button>
+      <button class="danger" onclick="startNewDay()">Yes, start new day</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="historyModal">
+  <div class="modal">
+    <h2 style="font-size:16px;margin-bottom:12px;">Day history</h2>
+    <div class="search-wrap">
+      <input type="text" id="historySearch" placeholder="Search by day number or quest name..." oninput="renderHistory()" />
+    </div>
+    <div id="historyList"></div>
+    <div class="form-actions">
+      <button onclick="closeHistoryModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   CONFIG
+   ============================================================ */
+const DONE_XP = 10;
+const SKIP_PENALTY = 4;
+const LEVEL_BASE_XP = 100;
+const KCAL_PER_KG = 7700;
+const DEFICIT_PER_TASK = 500;
+const FAT_GOAL_KG = 10;
+const CHAR_NAME = 'Arjun';
+
+const DIFFICULTY_MULT = { easy: 1, medium: 1.5, hard: 2.2 };
+const COIN_RATIO = 0.6;
+const WEEKLY_TARGET_DAYS = 5;   // perfect days needed out of 7 to claim weekly reward
+const WEEKLY_LENGTH = 7;
+
+const DEFAULT_STATS = ['discipline','hygiene','fitness','charm'];
+
+const DEFAULT_TASKS = [
+  {name:'Wake up at 6am', stats:['discipline'], type:'simple', difficulty:'easy'},
+  {name:'Clean room', stats:['discipline','hygiene'], type:'simple', difficulty:'easy'},
+  {name:'Take a bath', stats:['hygiene'], type:'simple', difficulty:'easy'},
+  {name:'Wash clothes', stats:['hygiene'], type:'simple', frequency:3, difficulty:'easy'},
+  {name:'Eat healthy', stats:['fitness','discipline'], type:'simple', difficulty:'medium'},
+  {name:'Hit 500 cal deficit', stats:['fitness','discipline'], type:'simple', isDeficitTask:true, difficulty:'medium'},
+  {name:'Do exercises', stats:['fitness','discipline','charm'], type:'progressive', target:10, growth:2, interval:7, difficulty:'hard'},
+  {name:'Practice music', stats:['charm','discipline'], type:'simple', difficulty:'medium'},
+  {name:'Create content', stats:['charm','discipline'], type:'simple', difficulty:'medium'}
+];
+
+const QUEST_POOL = [
+  {name:'Stretch for 5 minutes', reward:{fitness:6}, overallXP:8},
+  {name:'Drink a full glass of water', reward:{fitness:4}, overallXP:6},
+  {name:'Tidy one small area', reward:{discipline:6}, overallXP:8},
+  {name:'Journal for 5 minutes', reward:{charm:6}, overallXP:8},
+  {name:'Call or message someone you care about', reward:{charm:8}, overallXP:10},
+  {name:'Read one chapter of a book', reward:{discipline:8}, overallXP:10},
+  {name:'Learn one new thing about your craft', reward:{charm:8}, overallXP:10},
+  {name:'Declutter one drawer or surface', reward:{discipline:6}, overallXP:8}
+];
+
+// Shop items. minLevel gates availability; cost is coins.
+const SHOP_ITEMS = [
+  { id:'boost', name:'XP Boost Token', desc:'Your next completed quest gives +50% XP.', cost:100, minLevel:1, type:'consumable' },
+  { id:'shield', name:'Streak Shield', desc:'Auto-protects your streak the next time you miss a full day.', cost:150, minLevel:1, type:'stackable' },
+  { id:'reroll', name:'Reroll Side Quests', desc:'Swap your current side quests for new ones.', cost:80, minLevel:1, type:'consumable' },
+  { id:'title_disciplined', name:'Title: The Disciplined', desc:'A badge for your profile header.', cost:200, minLevel:3, type:'title' },
+  { id:'title_ironwill', name:'Title: Iron Will', desc:'A badge for your profile header.', cost:300, minLevel:6, type:'title' }
+];
+
+// Achievements. check(state) reads only from persisted state fields.
+const ACHIEVEMENT_DEFS = [
+  { id:'level_2', name:'Getting Started', desc:'Reach character level 2.', coins:50, check: s => s.charLevel >= 2 },
+  { id:'level_5', name:'Rising Hero', desc:'Reach character level 5.', coins:150, check: s => s.charLevel >= 5 },
+  { id:'level_10', name:'Seasoned Adventurer', desc:'Reach character level 10.', coins:400, check: s => s.charLevel >= 10 },
+  { id:'streak_3', name:'On a Roll', desc:'Hit a 3-day perfect streak.', coins:60, check: s => s.streak.longest >= 3 },
+  { id:'streak_7', name:'Week Warrior', desc:'Hit a 7-day perfect streak.', coins:150, check: s => s.streak.longest >= 7 },
+  { id:'streak_30', name:'Unstoppable', desc:'Hit a 30-day perfect streak.', coins:500, check: s => s.streak.longest >= 30 },
+  { id:'tasks_50', name:'Grinder', desc:'Complete 50 quests total.', coins:100, check: s => s.lifetime.tasksCompleted >= 50 },
+  { id:'tasks_200', name:'Relentless', desc:'Complete 200 quests total.', coins:300, check: s => s.lifetime.tasksCompleted >= 200 },
+  { id:'hard_25', name:'No Easy Days', desc:'Complete 25 hard-difficulty quests.', coins:150, check: s => s.lifetime.hardTasksCompleted >= 25 },
+  { id:'stat_lvl5', name:'Specialist', desc:'Get any attribute to level 5.', coins:100, check: s => Object.values(s.stats).some(st => st.level >= 5) },
+  { id:'stat_lvl10', name:'Master', desc:'Get any attribute to level 10.', coins:250, check: s => Object.values(s.stats).some(st => st.level >= 10) },
+  { id:'perfect_week', name:'Flawless Week', desc:'Successfully complete a weekly challenge.', coins:200, check: s => s.weeklyClaims >= 1 },
+  { id:'fatloss_5', name:'Halfway There', desc:'Lose 5kg on the fat tracker.', coins:200, check: s => (s.fatLossKcal / KCAL_PER_KG) >= 5 },
+  { id:'fatloss_10', name:'Goal Crushed', desc:'Reach the full 10kg fat loss goal.', coins:500, check: s => (s.fatLossKcal / KCAL_PER_KG) >= FAT_GOAL_KG }
+];
+
+let state = null;
+
+// Transient (non-persisted) UI hints for animations - cleared after each render use.
+let flashStats = new Set();
+let flashTaskId = null;
+let flashCoins = false;
+
+/* ============================================================
+   STATE
+   ============================================================ */
+function buildRewards(statsArr){
+  const rewards = {};
+  const weight = 1 / statsArr.length;
+  statsArr.forEach(s => { rewards[s] = weight; });
+  return rewards;
+}
+
+function emptyToday(){
+  return { statNet:{}, overallNet:0, coinsNet:0 };
+}
+
+function makeDefaultState(){
+  const stats = {};
+  DEFAULT_STATS.forEach(s => stats[s] = {xp:0, level:1});
+  const tasks = DEFAULT_TASKS.map((t,i) => ({
+    id: 't'+i,
+    name: t.name,
+    rewards: buildRewards(t.stats),
+    type: t.type,
+    difficulty: t.difficulty || 'medium',
+    frequency: t.frequency || 1,
+    nextDueDay: 1,
+    target: t.target || null,
+    growth: t.growth || null,
+    interval: t.interval || null,
+    originalTarget: t.target || null,
+    progStreak: 0,
+    doneToday: false,
+    isDeficitTask: !!t.isDeficitTask,
+    _appliedXP: 0,
+    _appliedCoins: 0,
+    _appliedBoosted: false
+  }));
+  const pool = QUEST_POOL.map((q,i) => ({...q, id:'q'+i}));
+  const active = pool.splice(0,3);
+  return {
+    day: 1,
+    charName: CHAR_NAME,
+    charLevel: 1,
+    charXP: 0,
+    stats,
+    tasks,
+    questPool: pool,
+    activeQuests: active,
+    fatLossKcal: 0,
+    today: emptyToday(),
+    dayHistory: [],
+
+    coins: 0,
+    lifetime: { tasksCompleted:0, hardTasksCompleted:0, coinsEarned:0 },
+    streak: { current:0, longest:0 },
+    streakShields: 0,
+    pendingBoost: false,
+    ownedTitles: [],
+    activeTitle: null,
+    weekly: { daysElapsed:0, perfectDays:0 },
+    weeklyClaims: 0,
+    unlockedAchievements: {},
+    activityLog: []
+  };
+}
+
+function migrateTask(t, day){
+  if(!t.frequency) t.frequency = 1;
+  if(typeof t.nextDueDay !== 'number') t.nextDueDay = day;
+  if(t.isDeficitTask === undefined) t.isDeficitTask = false;
+  if(!t.rewards){
+    t.rewards = t.stat ? {[t.stat]: 1} : {discipline: 1};
+  }
+  if(!t.difficulty) t.difficulty = 'medium';
+  if(typeof t.progStreak !== 'number') t.progStreak = (typeof t.streak === 'number') ? t.streak : 0;
+  if(typeof t._appliedXP !== 'number') t._appliedXP = 0;
+  if(typeof t._appliedCoins !== 'number') t._appliedCoins = 0;
+  if(typeof t._appliedBoosted !== 'boolean') t._appliedBoosted = false;
+  return t;
+}
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem('liferpg_save');
+    if(!raw) return makeDefaultState();
+    const parsed = JSON.parse(raw);
+
+    if(typeof parsed.day !== 'number') parsed.day = 1;
+    if(!parsed.charName) parsed.charName = CHAR_NAME;
+    if(typeof parsed.fatLossKcal !== 'number') parsed.fatLossKcal = 0;
+    if(!parsed.today) parsed.today = emptyToday();
+    if(typeof parsed.today.coinsNet !== 'number') parsed.today.coinsNet = 0;
+    if(!Array.isArray(parsed.dayHistory)) parsed.dayHistory = [];
+
+    if(typeof parsed.coins !== 'number') parsed.coins = 0;
+    if(!parsed.lifetime) parsed.lifetime = { tasksCompleted:0, hardTasksCompleted:0, coinsEarned:0 };
+    if(!parsed.streak) parsed.streak = { current:0, longest:0 };
+    if(typeof parsed.streakShields !== 'number') parsed.streakShields = 0;
+    if(typeof parsed.pendingBoost !== 'boolean') parsed.pendingBoost = false;
+    if(!Array.isArray(parsed.ownedTitles)) parsed.ownedTitles = [];
+    if(parsed.activeTitle === undefined) parsed.activeTitle = null;
+    if(!parsed.weekly) parsed.weekly = { daysElapsed:0, perfectDays:0 };
+    if(typeof parsed.weeklyClaims !== 'number') parsed.weeklyClaims = 0;
+    if(!parsed.unlockedAchievements) parsed.unlockedAchievements = {};
+    if(!Array.isArray(parsed.activityLog)) parsed.activityLog = [];
+
+    parsed.tasks.forEach(t => migrateTask(t, parsed.day));
+    return parsed;
+  }catch(e){
+    console.error('Could not load save, starting fresh.', e);
+    return makeDefaultState();
+  }
+}
+
+function saveState(){
+  try{
+    localStorage.setItem('liferpg_save', JSON.stringify(state));
+  }catch(e){
+    console.error('Could not save progress.', e);
+    showToast('Could not save — storage may be full or blocked.');
+  }
+}
+
+/* ============================================================
+   CORE XP / LEVEL MATH
+   ============================================================ */
+function xpToNext(level){
+  return level * LEVEL_BASE_XP;
+}
+
+function addStatXP(statKey, amount){
+  const stat = state.stats[statKey];
+  if(!stat) return;
+  stat.xp += amount;
+  if(stat.xp < 0) stat.xp = 0;
+  while(stat.xp >= xpToNext(stat.level)){
+    stat.xp -= xpToNext(stat.level);
+    stat.level += 1;
+  }
+  flashStats.add(statKey);
+}
+
+function addCharXP(amount){
+  state.charXP += amount;
+  if(state.charXP < 0) state.charXP = 0;
+  while(state.charXP >= xpToNext(state.charLevel)){
+    state.charXP -= xpToNext(state.charLevel);
+    state.charLevel += 1;
+    const bonusCoins = state.charLevel * 20;
+    state.coins += bonusCoins;
+    state.lifetime.coinsEarned += bonusCoins;
+    flashCoins = true;
+    logActivity('⭐ Leveled up to ' + state.charLevel + '! +' + bonusCoins + ' coins');
+    triggerLevelUpBanner(state.charLevel, bonusCoins);
+  }
+}
+
+/* ============================================================
+   TASK XP / COIN CALCULATION
+   ============================================================ */
+function taskBaseXP(task){
+  let base = DONE_XP;
+  if(task.type === 'progressive' && task.originalTarget){
+    base = Math.round(DONE_XP * (task.target / task.originalTarget));
+  }
+  const mult = DIFFICULTY_MULT[task.difficulty] || DIFFICULTY_MULT.medium;
+  return Math.round(base * mult);
+}
+
+function taskCoinsFor(totalXP, task){
+  let coins = Math.round(totalXP * COIN_RATIO);
+  if(task.difficulty === 'hard') coins += 5;
+  return coins;
+}
+
+function isTaskDueToday(task){
+  return task.frequency <= 1 || task.nextDueDay === state.day;
+}
+
+/* ============================================================
+   TASK TOGGLE  (anti-exploit: reversal uses the EXACT values that
+   were applied at check-time, stored on the task, so on/off toggling
+   nets to precisely zero regardless of any state that changed in
+   between — no drift, no farming loop.)
+   ============================================================ */
+function toggleTask(taskId, checked){
+  const task = state.tasks.find(t => t.id === taskId);
+  if(!task) return;
+
+  if(checked){
+    let totalXP = taskBaseXP(task);
+    let boosted = false;
+    if(state.pendingBoost){
+      totalXP = Math.round(totalXP * 1.5);
+      state.pendingBoost = false;
+      boosted = true;
+    }
+    const coins = taskCoinsFor(totalXP, task);
+
+    task.doneToday = true;
+    task._appliedXP = totalXP;
+    task._appliedCoins = coins;
+    task._appliedBoosted = boosted;
+
+    const overallAmount = Math.round(totalXP / 2);
+    Object.entries(task.rewards).forEach(([statKey, weight]) => {
+      const amt = Math.round(totalXP * weight);
+      addStatXP(statKey, amt);
+      state.today.statNet[statKey] = (state.today.statNet[statKey] || 0) + amt;
+    });
+    addCharXP(overallAmount);
+    state.today.overallNet += overallAmount;
+
+    state.coins += coins;
+    state.lifetime.coinsEarned += coins;
+    state.lifetime.tasksCompleted += 1;
+    if(task.difficulty === 'hard') state.lifetime.hardTasksCompleted += 1;
+    state.today.coinsNet += coins;
+    flashCoins = true;
+    flashTaskId = task.id;
+
+    if(task.isDeficitTask){
+      state.fatLossKcal = Math.max(0, state.fatLossKcal + DEFICIT_PER_TASK);
+    }
+
+    logActivity('✅ ' + task.name + '  +' + overallAmount + ' XP, +' + coins + ' 🪙' + (boosted ? ' (boosted!)' : ''));
+    showFeedback('+' + overallAmount + ' XP   +' + coins + ' 🪙' + (boosted ? '  ⚡' : ''), 'gain');
+
+  }else{
+    const totalXP = task._appliedXP || 0;
+    const coins = task._appliedCoins || 0;
+    task.doneToday = false;
+
+    const overallAmount = Math.round(totalXP / 2);
+    Object.entries(task.rewards).forEach(([statKey, weight]) => {
+      const amt = Math.round(totalXP * weight);
+      addStatXP(statKey, -amt);
+      state.today.statNet[statKey] = (state.today.statNet[statKey] || 0) - amt;
+    });
+    addCharXP(-overallAmount);
+    state.today.overallNet -= overallAmount;
+
+    state.coins = Math.max(0, state.coins - coins);
+    state.lifetime.coinsEarned = Math.max(0, state.lifetime.coinsEarned - coins);
+    state.lifetime.tasksCompleted = Math.max(0, state.lifetime.tasksCompleted - 1);
+    if(task.difficulty === 'hard') state.lifetime.hardTasksCompleted = Math.max(0, state.lifetime.hardTasksCompleted - 1);
+    state.today.coinsNet -= coins;
+    flashCoins = true;
+
+    if(task.isDeficitTask){
+      state.fatLossKcal = Math.max(0, state.fatLossKcal - DEFICIT_PER_TASK);
+    }
+
+    logActivity('↩️ Unmarked ' + task.name);
+
+    task._appliedXP = 0;
+    task._appliedCoins = 0;
+    task._appliedBoosted = false;
+  }
+
+  checkAchievements();
+  saveState();
+  render();
+}
+
+function deleteTask(taskId){
+  state.tasks = state.tasks.filter(t => t.id !== taskId);
+  saveState();
+  render();
+}
+
+function completeQuest(questId){
+  const quest = state.activeQuests.find(q => q.id === questId);
+  if(!quest) return;
+
+  Object.entries(quest.reward).forEach(([statKey, amount]) => {
+    addStatXP(statKey, amount);
+    state.today.statNet[statKey] = (state.today.statNet[statKey] || 0) + amount;
+  });
+  addCharXP(quest.overallXP);
+  state.today.overallNet += quest.overallXP;
+
+  const coins = Math.round(quest.overallXP * COIN_RATIO);
+  state.coins += coins;
+  state.lifetime.coinsEarned += coins;
+  state.today.coinsNet += coins;
+  flashCoins = true;
+
+  state.activeQuests = state.activeQuests.filter(q => q.id !== questId);
+  if(state.questPool.length > 0){
+    state.activeQuests.push(state.questPool.shift());
+  }
+  logActivity('🗺 Side quest: ' + quest.name + '  +' + quest.overallXP + ' XP, +' + coins + ' 🪙');
+  showFeedback('+' + quest.overallXP + ' XP   +' + coins + ' 🪙', 'gain');
+  showToast('Quest complete!');
+  checkAchievements();
+  saveState();
+  render();
+}
+
+/* ============================================================
+   START NEW DAY — the only place penalties, progressive growth,
+   streaks, and the weekly challenge are resolved. This keeps all
+   of those systems immune to rapid checkbox toggling.
+   ============================================================ */
+function getUntickedDueTasks(){
+  return state.tasks.filter(t => isTaskDueToday(t) && !t.doneToday);
+}
+
+function confirmStartNewDay(){
+  const unticked = getUntickedDueTasks();
+  const summaryEl = document.getElementById('newDaySummary');
+  if(unticked.length === 0){
+    summaryEl.textContent = 'All quests complete — no penalty, streak continues. Ready to move on?';
+  }else{
+    const names = unticked.map(t => t.name).join(', ');
+    summaryEl.textContent = unticked.length + ' unticked quest(s) will apply a penalty and break your streak: ' + names;
+  }
+  document.getElementById('newDayModal').classList.add('open');
+}
+
+function closeNewDayModal(){
+  document.getElementById('newDayModal').classList.remove('open');
+}
+
+function startNewDay(){
+  const dueTasksToday = state.tasks.filter(isTaskDueToday);
+  const unticked = getUntickedDueTasks();
+  const perfectDay = unticked.length === 0;
+
+  // Penalty for unticked due tasks
+  const statLosses = {};
+  unticked.forEach(task => {
+    const mult = DIFFICULTY_MULT[task.difficulty] || DIFFICULTY_MULT.medium;
+    const penaltyBase = Math.round(SKIP_PENALTY * mult);
+    Object.entries(task.rewards).forEach(([statKey, weight]) => {
+      const penaltyAmt = Math.round(penaltyBase * weight);
+      addStatXP(statKey, -penaltyAmt);
+      statLosses[statKey] = (statLosses[statKey] || 0) + penaltyAmt;
+    });
+  });
+
+  // Snapshot today for history
+  const tasksSnapshot = dueTasksToday.map(task => {
+    if(task.doneToday){
+      const statBreakdown = {};
+      Object.entries(task.rewards).forEach(([statKey, weight]) => {
+        statBreakdown[statKey] = Math.round(task._appliedXP * weight);
+      });
+      return { name: task.name, done:true, statBreakdown, coins: task._appliedCoins || 0 };
+    }else{
+      const mult = DIFFICULTY_MULT[task.difficulty] || DIFFICULTY_MULT.medium;
+      const penaltyBase = Math.round(SKIP_PENALTY * mult);
+      const statBreakdown = {};
+      Object.entries(task.rewards).forEach(([statKey, weight]) => {
+        statBreakdown[statKey] = -Math.round(penaltyBase * weight);
+      });
+      return { name: task.name, done:false, statBreakdown, coins:0 };
+    }
+  });
+
+  const statGains = {};
+  Object.entries(state.today.statNet).forEach(([k,v]) => { if(v > 0) statGains[k] = v; });
+  const totalLoss = Object.values(statLosses).reduce((a,b) => a+b, 0);
+
+  state.dayHistory.push({
+    day: state.day,
+    overallGained: Math.max(0, state.today.overallNet),
+    overallLost: totalLoss,
+    coinsGained: Math.max(0, state.today.coinsNet),
+    statGains,
+    statLosses,
+    tasks: tasksSnapshot
+  });
+
+  // Streak resolution
+  if(perfectDay){
+    state.streak.current += 1;
+    if(state.streak.current > state.streak.longest) state.streak.longest = state.streak.current;
+    logActivity('🔥 Perfect day! Streak: ' + state.streak.current);
+  }else if(state.streakShields > 0){
+    state.streakShields -= 1;
+    logActivity('🛡 Streak shield used — streak preserved at ' + state.streak.current);
+    showToast('Streak shield used — streak protected!');
+  }else{
+    if(state.streak.current > 0) logActivity('💔 Streak broken (was ' + state.streak.current + ')');
+    state.streak.current = 0;
+  }
+
+  // Weekly challenge resolution
+  state.weekly.daysElapsed += 1;
+  if(perfectDay) state.weekly.perfectDays += 1;
+  if(state.weekly.daysElapsed >= WEEKLY_LENGTH){
+    if(state.weekly.perfectDays >= WEEKLY_TARGET_DAYS){
+      const wCoins = 100, wXP = 50;
+      state.coins += wCoins;
+      state.lifetime.coinsEarned += wCoins;
+      addCharXP(wXP);
+      state.weeklyClaims += 1;
+      logActivity('🏅 Weekly challenge complete! +' + wCoins + ' coins, +' + wXP + ' XP');
+      showFeedback('Weekly challenge complete! +' + wCoins + ' 🪙', 'special');
+    }else{
+      logActivity('📅 Weekly challenge missed (' + state.weekly.perfectDays + '/' + WEEKLY_TARGET_DAYS + ' perfect days)');
+    }
+    state.weekly.daysElapsed = 0;
+    state.weekly.perfectDays = 0;
+  }
+
+  // Advance recurring tasks + progressive difficulty growth (locked to real day-advance only)
+  state.tasks.forEach(task => {
+    if(isTaskDueToday(task)){
+      if(task.type === 'progressive'){
+        if(task.doneToday){
+          task.progStreak = (task.progStreak || 0) + 1;
+          if(task.progStreak >= task.interval){
+            task.target += task.growth;
+            task.progStreak = 0;
+          }
+        }else{
+          task.progStreak = 0;
+        }
+      }
+      if(task.frequency > 1){
+        task.nextDueDay = state.day + task.frequency;
+      }
+    }
+    task.doneToday = false;
+    task._appliedXP = 0;
+    task._appliedCoins = 0;
+    task._appliedBoosted = false;
+  });
+
+  state.day += 1;
+  state.today = emptyToday();
+
+  closeNewDayModal();
+  checkAchievements();
+  saveState();
+  render();
+
+  if(unticked.length > 0){
+    showToast(unticked.length + ' quest(s) missed — penalty applied.');
+  }else{
+    showToast('New day started. Good luck!');
+  }
+}
+
+/* ============================================================
+   ACHIEVEMENTS
+   ============================================================ */
+function checkAchievements(){
+  ACHIEVEMENT_DEFS.forEach(def => {
+    if(state.unlockedAchievements[def.id]) return;
+    if(def.check(state)){
+      state.unlockedAchievements[def.id] = true;
+      state.coins += def.coins;
+      state.lifetime.coinsEarned += def.coins;
+      flashCoins = true;
+      logActivity('🏆 Achievement: ' + def.name + '  +' + def.coins + ' 🪙');
+      showFeedback('🏆 ' + def.name + '   +' + def.coins + ' 🪙', 'special');
+    }
+  });
+}
+
+/* ============================================================
+   SHOP
+   ============================================================ */
+function buyItem(itemId){
+  const item = SHOP_ITEMS.find(i => i.id === itemId);
+  if(!item) return;
+  if(state.charLevel < item.minLevel){ showToast('Unlocks at level ' + item.minLevel + '.'); return; }
+  if(item.type === 'title' && state.ownedTitles.includes(itemId)){ showToast('Already owned.'); return; }
+  if(state.coins < item.cost){ showToast('Not enough coins.'); return; }
+
+  state.coins -= item.cost;
+  flashCoins = true;
+
+  if(item.id === 'boost'){
+    if(state.pendingBoost){ showToast('You already have a boost ready.'); state.coins += item.cost; flashCoins=false; return; }
+    state.pendingBoost = true;
+  }else if(item.id === 'shield'){
+    state.streakShields += 1;
+  }else if(item.id === 'reroll'){
+    const count = state.activeQuests.length;
+    state.activeQuests = [];
+    for(let i=0;i<count && state.questPool.length>0;i++){
+      state.activeQuests.push(state.questPool.shift());
+    }
+    if(state.activeQuests.length === 0){
+      showToast('No more quests left in the pool to reroll into.');
+    }
+  }else if(item.type === 'title'){
+    state.ownedTitles.push(itemId);
+    state.activeTitle = itemId;
+  }
+
+  logActivity('🛒 Bought ' + item.name + ' for ' + item.cost + ' 🪙');
+  showToast(item.name + ' purchased!');
+  saveState();
+  render();
+}
+
+function equipTitle(itemId){
+  state.activeTitle = (state.activeTitle === itemId) ? null : itemId;
+  saveState();
+  render();
+}
+
+/* ============================================================
+   ACTIVITY LOG
+   ============================================================ */
+function logActivity(text){
+  state.activityLog.push({ day: state.day, text });
+  if(state.activityLog.length > 20){
+    state.activityLog = state.activityLog.slice(-20);
+  }
+}
+
+/* ============================================================
+   TASK CREATION
+   ============================================================ */
+function openTaskModal(){
+  const list = document.getElementById('statCheckList');
+  list.innerHTML = '';
+  Object.keys(state.stats).forEach(s => {
+    const id = 'statchk_' + s;
+    const wrap = document.createElement('label');
+    wrap.innerHTML = '<input type="checkbox" id="' + id + '" value="' + s + '" style="width:auto;"> ' + capitalize(s);
+    list.appendChild(wrap);
+  });
+  document.getElementById('newTaskName').value = '';
+  document.getElementById('newStatName').value = '';
+  document.getElementById('newTaskFrequency').value = 1;
+  document.getElementById('newTaskTarget').value = 10;
+  document.getElementById('newTaskGrowth').value = 2;
+  document.getElementById('newTaskInterval').value = 7;
+  document.getElementById('newTaskIsDeficit').checked = false;
+  document.querySelector('input[name=taskType][value=simple]').checked = true;
+  document.querySelector('input[name=taskDifficulty][value=medium]').checked = true;
+  toggleProgressiveFields();
+  document.getElementById('taskModal').classList.add('open');
+}
+
+function closeTaskModal(){
+  document.getElementById('taskModal').classList.remove('open');
+}
+
+function toggleProgressiveFields(){
+  const isProgressive = document.querySelector('input[name=taskType]:checked').value === 'progressive';
+  document.getElementById('progressiveFields').classList.toggle('hidden', !isProgressive);
+}
+
+function saveNewTask(){
+  const name = document.getElementById('newTaskName').value.trim();
+  if(!name){ showToast('Give your quest a name first.'); return; }
+
+  const selected = Array.from(document.querySelectorAll('#statCheckList input[type=checkbox]:checked')).map(cb => cb.value);
+
+  const newStatName = document.getElementById('newStatName').value.trim().toLowerCase();
+  if(newStatName){
+    if(!state.stats[newStatName]){
+      state.stats[newStatName] = {xp:0, level:1};
+    }
+    if(!selected.includes(newStatName)) selected.push(newStatName);
+  }
+
+  if(selected.length === 0){
+    showToast('Pick at least one stat for this quest.');
+    return;
+  }
+
+  const frequency = parseInt(document.getElementById('newTaskFrequency').value, 10) || 1;
+  const type = document.querySelector('input[name=taskType]:checked').value;
+  const difficulty = document.querySelector('input[name=taskDifficulty]:checked').value;
+  const isDeficitTask = document.getElementById('newTaskIsDeficit').checked;
+
+  const task = {
+    id: 't' + Date.now(),
+    name,
+    rewards: buildRewards(selected),
+    type,
+    difficulty,
+    frequency,
+    nextDueDay: state.day,
+    doneToday:false, progStreak:0,
+    target:null, growth:null, interval:null, originalTarget:null,
+    isDeficitTask,
+    _appliedXP:0, _appliedCoins:0, _appliedBoosted:false
+  };
+  if(type === 'progressive'){
+    const target = parseInt(document.getElementById('newTaskTarget').value, 10) || 10;
+    task.target = target;
+    task.originalTarget = target;
+    task.growth = parseInt(document.getElementById('newTaskGrowth').value, 10) || 1;
+    task.interval = parseInt(document.getElementById('newTaskInterval').value, 10) || 7;
+  }
+
+  state.tasks.push(task);
+  closeTaskModal();
+  saveState();
+  render();
+}
+
+function capitalize(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
+
+/* ============================================================
+   HISTORY MODAL
+   ============================================================ */
+function openHistoryModal(){
+  document.getElementById('historySearch').value = '';
+  renderHistory();
+  document.getElementById('historyModal').classList.add('open');
+}
+
+function closeHistoryModal(){
+  document.getElementById('historyModal').classList.remove('open');
+}
+
+function buildStatBreakdownHtml(gains, losses){
+  const allStatKeys = Object.keys(state.stats);
+  return allStatKeys.map(key => {
+    const g = gains[key] || 0;
+    const l = losses[key] || 0;
+    return '<div class="stat-breakdown-item"><span>' + capitalize(key) + '</span><span><span class="g">+' + g + '</span> / <span class="l">-' + l + '</span></span></div>';
+  }).join('');
+}
+
+function buildTaskLinesHtml(tasks){
+  return tasks.map(t => {
+    const cls = t.done ? 'completed' : 'missed';
+    const icon = t.done ? '✓' : '✕';
+    const statText = Object.entries(t.statBreakdown).map(([k,v]) => (v>0?'+':'') + v + ' ' + capitalize(k)).join(', ');
+    const coinText = t.coins ? ('  +' + t.coins + '🪙') : '';
+    return '<div class="day-task-line ' + cls + '"><span class="name">' + icon + ' ' + t.name + '</span><span>' + statText + coinText + '</span></div>';
+  }).join('');
+}
+
+function renderHistory(){
+  const search = document.getElementById('historySearch').value.trim().toLowerCase();
+  const listEl = document.getElementById('historyList');
+  listEl.innerHTML = '';
+
+  const dueTasksToday = state.tasks.filter(isTaskDueToday);
+  const liveTasksSnapshot = dueTasksToday.map(task => {
+    if(task.doneToday){
+      const statBreakdown = {};
+      Object.entries(task.rewards).forEach(([statKey, weight]) => {
+        statBreakdown[statKey] = Math.round(task._appliedXP * weight);
+      });
+      return { name: task.name, done: true, statBreakdown, coins: task._appliedCoins || 0 };
+    }else{
+      const statBreakdown = {};
+      Object.entries(task.rewards).forEach(([statKey]) => { statBreakdown[statKey] = 0; });
+      return { name: task.name, done: false, statBreakdown, coins:0 };
+    }
+  });
+  const liveGains = {};
+  Object.entries(state.today.statNet).forEach(([k,v]) => { if(v>0) liveGains[k] = v; });
+
+  const currentEntry = {
+    day: state.day,
+    inProgress: true,
+    overallGained: Math.max(0, state.today.overallNet),
+    overallLost: 0,
+    coinsGained: Math.max(0, state.today.coinsNet),
+    statGains: liveGains,
+    statLosses: {},
+    tasks: liveTasksSnapshot
+  };
+
+  const allEntries = [currentEntry, ...[...state.dayHistory].reverse()];
+
+  const filtered = allEntries.filter(entry => {
+    if(!search) return true;
+    if(String(entry.day).includes(search)) return true;
+    return entry.tasks.some(t => t.name.toLowerCase().includes(search));
+  });
+
+  if(filtered.length === 0){
+    listEl.innerHTML = '<div class="no-results">No days match your search.</div>';
+    return;
+  }
+
+  filtered.forEach(entry => {
+    const card = document.createElement('div');
+    card.className = 'day-card';
+    const tag = entry.inProgress ? '<span class="day-tag">in progress</span>' : '<span class="day-tag">completed</span>';
+    card.innerHTML =
+      '<div class="day-card-head"><span class="day-title">Day ' + entry.day + '</span>' + tag + '</div>' +
+      '<div class="xp-summary-row"><span class="gain">XP: +' + entry.overallGained + '</span><span class="loss">-' + entry.overallLost + '</span><span class="coin">🪙 +' + entry.coinsGained + '</span></div>' +
+      '<div class="stat-breakdown">' + buildStatBreakdownHtml(entry.statGains, entry.statLosses) + '</div>' +
+      buildTaskLinesHtml(entry.tasks);
+    listEl.appendChild(card);
+  });
+}
+
+/* ============================================================
+   FEEDBACK / ANIMATIONS
+   ============================================================ */
+let toastTimer = null;
+function showToast(msg){
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 2200);
+}
+
+function showFeedback(msg, type){
+  const el = document.createElement('div');
+  el.className = 'feedback-pop' + (type ? ' ' + type : '');
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1450);
+}
+
+function triggerLevelUpBanner(level, bonusCoins){
+  const el = document.createElement('div');
+  el.className = 'level-banner';
+  el.innerHTML = 'LEVEL UP!<br>Level ' + level + '<div class="sub">+' + bonusCoins + ' 🪙 bonus</div>';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2200);
+}
+
+/* ============================================================
+   RENDER
+   ============================================================ */
+function render(){
+  // Header
+  document.getElementById('charNameHeading').textContent = state.charName;
+  document.getElementById('charLevelBadge').textContent = state.charLevel;
+  const need = xpToNext(state.charLevel);
+  document.getElementById('charXpLine').textContent = state.charXP + ' / ' + need + ' XP to next level';
+  document.getElementById('charXpBar').style.width = Math.min(100, (state.charXP/need)*100) + '%';
+
+  const titleDef = state.activeTitle ? SHOP_ITEMS.find(i => i.id === state.activeTitle) : null;
+  document.getElementById('charTitleLine').textContent = titleDef ? titleDef.name.replace('Title: ', '') : '';
+
+  const coinPill = document.getElementById('coinPill');
+  coinPill.textContent = '🪙 ' + state.coins;
+  coinPill.classList.toggle('flash', flashCoins);
+  flashCoins = false;
+
+  const boostBanner = document.getElementById('boostBanner');
+  boostBanner.classList.toggle('hidden', !state.pendingBoost);
+
+  // Day banner
+  document.getElementById('dayNumber').textContent = state.day;
+  const todayGain = Math.max(0, state.today.overallNet);
+  document.getElementById('todayXpSummary').textContent = 'Today: +' + todayGain + ' XP';
+
+  // Daily progress
+  const dueTasks = state.tasks.filter(isTaskDueToday);
+  const doneCount = dueTasks.filter(t => t.doneToday).length;
+  const remaining = dueTasks.length - doneCount;
+  document.getElementById('dueCountLabel').textContent = remaining + ' quest(s) remaining';
+  document.getElementById('dailyProgressText').textContent = doneCount + '/' + dueTasks.length;
+  const dailyPct = dueTasks.length ? (doneCount/dueTasks.length)*100 : 0;
+  document.getElementById('dailyProgressBar').style.width = dailyPct + '%';
+
+  // Streak
+  document.getElementById('streakCurrent').textContent = state.streak.current + '-day streak';
+  document.getElementById('streakLongest').textContent = 'Best: ' + state.streak.longest;
+  document.getElementById('shieldCount').textContent = '🛡 ' + state.streakShields + ' shield' + (state.streakShields===1?'':'s');
+
+  // Weekly challenge
+  document.getElementById('weeklyProgressText').textContent = state.weekly.perfectDays + '/' + WEEKLY_TARGET_DAYS + ' perfect days';
+  const weeklyPct = Math.min(100, (state.weekly.perfectDays / WEEKLY_TARGET_DAYS) * 100);
+  document.getElementById('weeklyProgressBar').style.width = weeklyPct + '%';
+  document.getElementById('weeklySub').textContent = 'Day ' + (state.weekly.daysElapsed+1) + ' of ' + WEEKLY_LENGTH + ' this week · reward: +100 coins, +50 XP';
+
+  // Stats
+  const statsList = document.getElementById('statsList');
+  statsList.innerHTML = '';
+  Object.entries(state.stats).forEach(([key, s]) => {
+    const need2 = xpToNext(s.level);
+    const pct = Math.min(100, (s.xp/need2)*100);
+    const row = document.createElement('div');
+    row.className = 'stat-row' + (flashStats.has(key) ? ' just-changed' : '');
+    row.innerHTML =
+      '<div class="stat-name">' + capitalize(key) + '</div>' +
+      '<div class="bar-track"><div class="bar-fill" style="width:' + pct + '%"></div></div>' +
+      '<div class="stat-lvl">Lv' + s.level + '</div>';
+    statsList.appendChild(row);
+  });
+  flashStats.clear();
+
+  // Fat loss
+  const fatKg = state.fatLossKcal / KCAL_PER_KG;
+  const fatPct = Math.min(100, (fatKg / FAT_GOAL_KG) * 100);
+  document.getElementById('fatLabel').textContent = fatKg.toFixed(1) + ' / ' + FAT_GOAL_KG + ' kg lost';
+  document.getElementById('fatBar').style.width = fatPct + '%';
+
+  // Tasks
+  const taskList = document.getElementById('taskList');
+  taskList.innerHTML = '';
+  dueTasks.forEach(task => {
+    const row = document.createElement('div');
+    row.className = 'task' + (flashTaskId === task.id ? ' just-completed' : '');
+    const statNames = Object.keys(task.rewards).map(capitalize).join(', ');
+    const diffLabel = capitalize(task.difficulty);
+    let meta = '<span class="diff-tag diff-' + task.difficulty + '">' + diffLabel + '</span> &middot; ' + statNames;
+    if(task.frequency > 1){
+      meta += ' &middot; every ' + task.frequency + ' days';
+    }
+    if(task.type === 'progressive'){
+      meta += ' &middot; target: ' + task.target + (task.growth ? ' (grows +' + task.growth + ' every ' + task.interval + ' successful days)' : '');
+    }
+    if(task.isDeficitTask){
+      meta += ' &middot; +' + DEFICIT_PER_TASK + ' kcal deficit';
+    }
+    row.innerHTML =
+      '<input type="checkbox" ' + (task.doneToday ? 'checked' : '') + ' onchange="toggleTask(\'' + task.id + '\', this.checked)" />' +
+      '<div class="task-body">' +
+        '<div class="task-name ' + (task.doneToday?'done':'') + '">' + task.name + '</div>' +
+        '<div class="task-meta">' + meta + '</div>' +
+      '</div>' +
+      '<button class="task-del" onclick="deleteTask(\'' + task.id + '\')" aria-label="Delete task">&times;</button>';
+    taskList.appendChild(row);
+  });
+  if(taskList.children.length === 0){
+    taskList.innerHTML = '<div class="task-meta">Nothing due right now — add a task or start a new day.</div>';
+  }
+  flashTaskId = null;
+
+  // Side quests
+  const questList = document.getElementById('sideQuestList');
+  questList.innerHTML = '';
+  if(state.activeQuests.length === 0){
+    questList.innerHTML = '<div class="task-meta">No quests left in the pool — buy a reroll or add more ideas later!</div>';
+  }
+  state.activeQuests.forEach(q => {
+    const rewardText = Object.entries(q.reward).map(([k,v]) => '+' + v + ' ' + capitalize(k)).join(', ');
+    const card = document.createElement('div');
+    card.className = 'quest';
+    card.innerHTML =
+      '<div class="quest-name">' + q.name + '</div>' +
+      '<div class="quest-reward">' + rewardText + ', +' + q.overallXP + ' overall XP</div>' +
+      '<button onclick="completeQuest(\'' + q.id + '\')">Mark complete</button>';
+    questList.appendChild(card);
+  });
+
+  // Shop
+  document.getElementById('shopCoinsSub').textContent = '· 🪙 ' + state.coins + ' available';
+  const shopList = document.getElementById('shopList');
+  shopList.innerHTML = '';
+  SHOP_ITEMS.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'shop-item';
+    const locked = state.charLevel < item.minLevel;
+    const owned = item.type === 'title' && state.ownedTitles.includes(item.id);
+    let actionHtml;
+    if(locked){
+      actionHtml = '<div class="locked-note">🔒 Unlocks at level ' + item.minLevel + '</div>';
+    }else if(owned){
+      const equipped = state.activeTitle === item.id;
+      actionHtml = '<button onclick="equipTitle(\'' + item.id + '\')">' + (equipped ? 'Equipped ✓' : 'Equip') + '</button>';
+    }else{
+      const disabled = state.coins < item.cost ? 'disabled' : '';
+      actionHtml = '<button ' + disabled + ' onclick="buyItem(\'' + item.id + '\')">Buy for 🪙 ' + item.cost + '</button>';
+    }
+    card.innerHTML =
+      '<div class="shop-item-head"><span class="shop-item-name">' + item.name + '</span><span class="shop-item-cost">🪙 ' + item.cost + '</span></div>' +
+      '<div class="shop-item-desc">' + item.desc + '</div>' +
+      actionHtml;
+    shopList.appendChild(card);
+  });
+
+  // Achievements
+  const unlockedCount = Object.keys(state.unlockedAchievements).length;
+  document.getElementById('achProgressSub').textContent = '· ' + unlockedCount + '/' + ACHIEVEMENT_DEFS.length;
+  const achList = document.getElementById('achList');
+  achList.innerHTML = '';
+  ACHIEVEMENT_DEFS.forEach(def => {
+    const unlocked = !!state.unlockedAchievements[def.id];
+    const item = document.createElement('div');
+    item.className = 'ach-item ' + (unlocked ? 'unlocked' : 'locked');
+    item.innerHTML =
+      '<div class="ach-icon">' + (unlocked ? '🏆' : '🔒') + '</div>' +
+      '<div>' +
+        '<div class="ach-name">' + def.name + '</div>' +
+        '<div class="ach-desc">' + def.desc + '</div>' +
+        '<div class="ach-reward">Reward: 🪙 ' + def.coins + '</div>' +
+      '</div>';
+    achList.appendChild(item);
+  });
+
+  // Activity feed
+  const activityList = document.getElementById('activityList');
+  activityList.innerHTML = '';
+  if(state.activityLog.length === 0){
+    activityList.innerHTML = '<div class="task-meta">Nothing yet — complete a quest to get started.</div>';
+  }else{
+    [...state.activityLog].reverse().forEach(entry => {
+      const row = document.createElement('div');
+      row.className = 'activity-item';
+      row.innerHTML = '<span>' + entry.text + '</span><span class="a-day">Day ' + entry.day + '</span>';
+      activityList.appendChild(row);
+    });
+  }
+}
+
+state = loadState();
+render();
+</script>
+</body>
+</html>
